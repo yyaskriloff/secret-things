@@ -20,26 +20,6 @@ func main() {
 	cmd := os.Args[1]
 
 	switch cmd {
-	case "config":
-		if argsLength < 3 {
-			panic("no config command was provided")
-
-		}
-		subCommand := os.Args[2]
-		if argsLength < 4 {
-			panic("no app name was provided")
-		}
-		// name := os.Args[3]
-
-		switch subCommand {
-		case "app":
-			fmt.Println("app subcommand")
-		case "profile":
-			fmt.Println("profile subcommand")
-		default:
-			panic(fmt.Sprintf("%s is not a recognized command", subCommand))
-		}
-
 	case "env":
 		if argsLength < 3 {
 			panic("no env command was provided")
@@ -71,21 +51,18 @@ func main() {
 		varValue := os.Args[4]
 
 		fmt.Printf("Setting %s to %s", varName, varValue)
-
 	case "load":
 		if argsLength < 3 {
 			panic("no file was provided")
 		}
 
 		fmt.Println(*env)
-
 	case "sync":
 		if argsLength < 3 {
 			panic("no file was provided")
 		}
 
 		fmt.Println(*env)
-
 	default:
 		fmt.Printf("%s is not a recognized command", cmd)
 
