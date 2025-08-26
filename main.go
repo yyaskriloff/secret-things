@@ -19,6 +19,9 @@ func main() {
 
 	cmd := os.Args[1]
 
+	config := configuration{}
+	config.LoadConfig()
+
 	switch cmd {
 	case "env":
 		if argsLength < 3 {
