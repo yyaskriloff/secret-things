@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -16,13 +17,13 @@ func (c *configuration) LoadConfig() {
 	filePath, _ := filepath.Abs("./secrets.config.json")
 	contents, err := os.ReadFile(filePath)
 	if err != nil {
-		panic("No config file found")
+		log.Fatal("No config file found")
 	}
 
 	err = json.Unmarshal([]byte(contents), &c)
 
 	if err != nil {
-		panic("Unable to parse config file")
+		log.Fatal("Unable to parse config file")
 	}
 
 }

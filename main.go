@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -11,7 +12,7 @@ func main() {
 	argsLength := len(os.Args)
 
 	if argsLength < 2 {
-		panic("no command was not provided")
+		log.Fatal("no command was not provided")
 	}
 
 	env := flag.String("env", "", "The name of env to assign the vars")
@@ -22,32 +23,35 @@ func main() {
 	config := configuration{}
 	config.LoadConfig()
 
+	state := appState{}
+	state.Load()
+
 	switch cmd {
 	case "env":
 		if argsLength < 3 {
-			panic("no env command was provided")
+			log.Fatal("no env command was provided")
 		}
 		subCommand := os.Args[2]
 		if argsLength < 4 {
-			panic("no env name was provided")
+			log.Fatal("no env name was provided")
 		}
 
-		// name := os.Args[3]
+		name := os.Args[3]
 		switch subCommand {
 		case "create":
-			fmt.Println("create subcommand")
+			state.AddEnv(name)
 		case "delete":
-			fmt.Println("delete subcommand")
+			state.RemoveEnv(name)
 
 		}
 	case "set":
 
 		if argsLength < 3 {
-			panic("no var was provided")
+			log.Fatal("no var was provided")
 		}
 
 		if argsLength < 4 {
-			panic("no var value was provided")
+			log.Fatal("no var value was provided")
 		}
 
 		varName := os.Args[3]
@@ -56,13 +60,13 @@ func main() {
 		fmt.Printf("Setting %s to %s", varName, varValue)
 	case "load":
 		if argsLength < 3 {
-			panic("no file was provided")
+			log.Fatal("no file was provided")
 		}
 
 		fmt.Println(*env)
 	case "sync":
 		if argsLength < 3 {
-			panic("no file was provided")
+			log.Fatal("no file was provided")
 		}
 
 		fmt.Println(*env)
