@@ -13,7 +13,7 @@ import (
 
 type environment struct {
 	Name string   `json:"name"`
-	Keys []string `json:keys`
+	Keys []string `json:"keys"`
 }
 
 type appState struct {
