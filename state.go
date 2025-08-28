@@ -42,7 +42,6 @@ func (s *appState) Load() error {
 	// doesn't exist but obviusly you would wanna check
 	if err != nil {
 		s.Environments = make([]environment, 0)
-		s.Write()
 	}
 
 	err = json.Unmarshal([]byte(contents), &s)
@@ -94,7 +93,6 @@ func (s *appState) AddEnv(env string) {
 	newEnv := environment{Name: env, Keys: make([]string, 0)}
 	s.Environments = append(s.Environments, newEnv)
 
-	s.Write()
 }
 func (s *appState) RemoveEnv(env string) {
 	removeIndex := s.findIndex(env)
@@ -106,7 +104,6 @@ func (s *appState) RemoveEnv(env string) {
 }
 func (s *appState) AddSecret(env string, key string) {
 	envIndex := s.findIndex(env)
-	defer s.Write()
 	if envIndex == -1 {
 		s.Environments = append(s.Environments, environment{
 			Name: env,
@@ -145,7 +142,5 @@ func (s *appState) RemoveSecret(env string, key string) {
 		Name: s.Environments[envIndex].Name,
 		Keys: slices.Delete(s.Environments[envIndex].Keys, keyIndex, keyIndex+1),
 	}
-
-	s.Write()
 
 }

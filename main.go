@@ -78,4 +78,6 @@ func main() {
 
 	}
 
+	state.Write()
+
 }
