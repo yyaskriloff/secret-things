@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 func main() {
@@ -105,6 +107,10 @@ func main() {
 				state.RemoveSecret(*env, k)
 
 			}
+			// if found make sure it's in state
+			if ok {
+				state.AddSecret(*env, k)
+			}
 
 			// removing so we don't recreate
 			delete(keyValues, k)
@@ -124,7 +130,39 @@ func main() {
 			log.Fatal("no file was provided")
 		}
 
-		fmt.Println(*env)
+		fileName := os.Args[3]
+
+		keyValues, err := Parse(fileName)
+
+		secrets.GetValues(*env, keyValues, nil)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		varsForFile := Print(keyValues)
+
+		filePath, _ := filepath.Abs("./state/app.json")
+		dirPath, _ := filepath.Abs("./state")
+
+		_, err = os.Stat(dirPath)
+		if errors.Is(err, os.ErrNotExist) {
+			os.Mkdir(dirPath, os.ModePerm)
+		} else if err != nil {
+			log.Fatal(err)
+		}
+		// potential issue if fail to write to file we just trunicated and lost all vars
+		f, err := os.Create(filePath)
+		if err != nil {
+			log.Fatalf("Failed to create/truncate file: %v", err)
+		}
+		defer f.Close()
+
+		_, err = f.Write(varsForFile.Bytes())
+		if err != nil {
+			log.Fatalf("Failed to write to file: %v", err)
+		}
+
 	default:
 		fmt.Printf("%s is not a recognized command", cmd)
 
