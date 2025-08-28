@@ -26,6 +26,9 @@ func main() {
 	state := appState{}
 	state.Load()
 
+	secrets := secretsManager{}
+	secrets.Init(&config)
+
 	switch cmd {
 	case "env":
 		if argsLength < 3 {
