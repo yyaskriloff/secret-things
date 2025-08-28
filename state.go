@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -55,6 +56,15 @@ func (s *appState) Load() error {
 }
 func (s *appState) Write() {
 	filePath, _ := filepath.Abs("./state/app.json")
+	dirPath, _ := filepath.Abs("./state")
+
+	_, err := os.Stat(dirPath)
+	if errors.Is(err, os.ErrNotExist) {
+		os.Mkdir(dirPath, os.ModePerm)
+	} else if err != nil {
+		log.Fatal(err)
+	}
+
 	f, err := os.Create(filePath)
 
 	if err != nil {
