@@ -27,7 +27,6 @@ func TestEnvPrint(t *testing.T) {
 		"VALUE2": "WORLD",
 	}
 
-	b := Print(vars)
+	WriteEnv(vars, "./test.env")
 
-	t.Log(b.String())
 }
