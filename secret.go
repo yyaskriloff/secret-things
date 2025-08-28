@@ -14,11 +14,23 @@ import (
 
 type secretsManager struct {
 	client *secretsmanager.Client
+	config *configuration
+}
+
+func getKeyName(key string) (string, error) {
+	parts := strings.SplitN(key, ":", 3)
+
+	if len(parts) != 3 {
+		return "", fmt.Errorf("unable to parse secret name, %s", key)
+	}
+
+	return parts[2], nil
+
 }
 
 func (s *secretsManager) Init(appConfig *configuration) {
 
-	if s.client == nil {
+	if s.client != nil {
 		fmt.Println("Secrets Manager was already init")
 	}
 
@@ -29,6 +41,7 @@ func (s *secretsManager) Init(appConfig *configuration) {
 	}
 
 	s.client = secretsmanager.NewFromConfig(cfg)
+	s.config = appConfig
 
 }
 
@@ -42,6 +55,14 @@ func (s *secretsManager) ListValues(env string, secretsList *[]string, nextToken
 			{
 				Key:    types.FilterNameStringTypeTagValue,
 				Values: []string{env},
+			},
+			{
+				Key:    types.FilterNameStringTypeTagKey,
+				Values: []string{"app"},
+			},
+			{
+				Key:    types.FilterNameStringTypeTagValue,
+				Values: []string{s.config.App},
 			},
 		},
 	}
@@ -60,14 +81,14 @@ func (s *secretsManager) ListValues(env string, secretsList *[]string, nextToken
 	}
 
 	for _, v := range secrets.SecretList {
-		fullName := *v.Name
-		i := strings.Index(fullName, ":")
 
-		if i == -1 {
-			return fmt.Errorf("unable to parse secret name, %s", fullName)
+		name, err := getKeyName(*v.Name)
+
+		if err != nil {
+			return err
 		}
 
-		*secretsList = append(*secretsList, fullName[i+1:])
+		*secretsList = append(*secretsList, name)
 	}
 
 	// recurstion break case
@@ -91,6 +112,14 @@ func (s *secretsManager) GetValues(env string, secretsMap map[string]string, nex
 				Key:    types.FilterNameStringTypeTagValue,
 				Values: []string{env},
 			},
+			{
+				Key:    types.FilterNameStringTypeTagKey,
+				Values: []string{"app"},
+			},
+			{
+				Key:    types.FilterNameStringTypeTagValue,
+				Values: []string{s.config.App},
+			},
 		},
 	}
 
@@ -101,14 +130,13 @@ func (s *secretsManager) GetValues(env string, secretsMap map[string]string, nex
 	}
 
 	for _, secret := range secrets.SecretValues {
-		fullName := *secret.Name
-		i := strings.Index(fullName, ":")
+		name, err := getKeyName(*secret.Name)
 
-		if i == -1 {
-			return fmt.Errorf("unable to parse secret name, %s", fullName)
+		if err != nil {
+			return err
 		}
 
-		secretsMap[fullName[i+1:]] = *secret.SecretString
+		secretsMap[name] = *secret.SecretString
 	}
 
 	// recurstion break case
@@ -122,7 +150,7 @@ func (s *secretsManager) GetValues(env string, secretsMap map[string]string, nex
 
 func (s *secretsManager) Get(env string, key string) (string, error) {
 	input := &secretsmanager.GetSecretValueInput{
-		SecretId: aws.String(env + ":" + key),
+		SecretId: aws.String(s.config.App + ":" + env + ":" + key),
 	}
 
 	secret, err := s.client.GetSecretValue(context.TODO(), input)
@@ -137,10 +165,14 @@ func (s *secretsManager) Get(env string, key string) (string, error) {
 }
 
 func (s *secretsManager) Set(env string, key string, value string) error {
+	app := s.config.App
 	input := &secretsmanager.CreateSecretInput{
-		Name:         aws.String(env + ":" + key),
+		Name:         aws.String(s.config.App + ":" + env + ":" + key),
 		SecretString: aws.String(value),
-		Tags:         []types.Tag{{Key: aws.String("env"), Value: aws.String(env)}},
+		Tags: []types.Tag{
+			{Key: aws.String("env"), Value: aws.String(env)},
+			{Key: aws.String("app"), Value: aws.String(app)},
+		},
 	}
 
 	_, err := s.client.CreateSecret(context.TODO(), input)
@@ -150,7 +182,7 @@ func (s *secretsManager) Set(env string, key string, value string) error {
 }
 func (s *secretsManager) Update(env string, key string, value string) error {
 	input := &secretsmanager.UpdateSecretInput{
-		SecretId:     aws.String(env + ":" + key),
+		SecretId:     aws.String(s.config.App + ":" + env + ":" + key),
 		SecretString: aws.String(value),
 	}
 
@@ -161,7 +193,7 @@ func (s *secretsManager) Update(env string, key string, value string) error {
 }
 func (s *secretsManager) Remove(env string, key string) error {
 	input := &secretsmanager.DeleteSecretInput{
-		SecretId: aws.String(env + ":" + key),
+		SecretId: aws.String(s.config.App + ":" + env + ":" + key),
 	}
 
 	_, err := s.client.DeleteSecret(context.TODO(), input)
