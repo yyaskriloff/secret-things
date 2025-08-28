@@ -16,6 +16,7 @@ func main() {
 	}
 
 	env := flag.String("env", "", "The name of env to assign the vars")
+	shouldDelete := flag.Bool("delete", false, "wether the left over vars should be deleted")
 	flag.Parse()
 
 	cmd := os.Args[1]
@@ -77,7 +78,46 @@ func main() {
 			log.Fatal("no file was provided")
 		}
 
-		fmt.Println(*env)
+		if env == nil {
+			log.Fatal("you need to set the env flag")
+		}
+
+		fileName := os.Args[3]
+
+		keyValues, err := Parse(fileName)
+
+		if err != nil {
+			log.Fatal(err)
+
+		}
+
+		var keysInStore []string
+
+		secrets.ListKeys(*env, &keysInStore, nil)
+
+		for _, k := range keysInStore {
+
+			_, ok := keyValues[k]
+
+			if !ok && *shouldDelete {
+				//
+				secrets.Remove(*env, k)
+
+			}
+			delete(keyValues, k)
+
+			// keysInStore = append(keysInStore[:i], keysInStore[i+1:]...)
+
+		}
+
+		// creating
+
+		for k, v := range keyValues {
+
+			secrets.Set(*env, k, v)
+
+		}
+
 	case "sync":
 		if argsLength < 3 {
 			log.Fatal("no file was provided")

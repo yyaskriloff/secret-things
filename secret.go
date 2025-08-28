@@ -45,7 +45,7 @@ func (s *secretsManager) Init(appConfig *configuration) {
 
 }
 
-func (s *secretsManager) ListValues(env string, secretsList *[]string, nextToken *string) error {
+func (s *secretsManager) ListKeys(env string, secretsList *[]string, nextToken *string) error {
 	input := &secretsmanager.ListSecretsInput{
 		Filters: []types.Filter{
 			{
@@ -96,7 +96,7 @@ func (s *secretsManager) ListValues(env string, secretsList *[]string, nextToken
 		return nil
 	}
 
-	return s.ListValues(env, secretsList, secrets.NextToken)
+	return s.ListKeys(env, secretsList, secrets.NextToken)
 
 }
 
