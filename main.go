@@ -60,7 +60,18 @@ func main() {
 		varName := os.Args[3]
 		varValue := os.Args[4]
 
-		fmt.Printf("Setting %s to %s", varName, varValue)
+		if env == nil {
+			log.Fatal("you need to set the env flag")
+		}
+
+		err := secrets.Set(*env, varName, varValue)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		state.AddSecret(*env, varName)
+
 	case "load":
 		if argsLength < 3 {
 			log.Fatal("no file was provided")
