@@ -102,8 +102,11 @@ func main() {
 			if !ok && *shouldDelete {
 				//
 				secrets.Remove(*env, k)
+				state.RemoveSecret(*env, k)
 
 			}
+
+			// removing so we don't recreate
 			delete(keyValues, k)
 
 			// keysInStore = append(keysInStore[:i], keysInStore[i+1:]...)
@@ -111,11 +114,9 @@ func main() {
 		}
 
 		// creating
-
 		for k, v := range keyValues {
-
 			secrets.Set(*env, k, v)
-
+			state.AddSecret(*env, k)
 		}
 
 	case "sync":
