@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,11 +78,23 @@ func Parse(path string) (map[string]string, error) {
 
 }
 
-func Print(vars map[string]string) bytes.Buffer {
+func WriteEnv(vars map[string]string, fileName string) {
 
 	var b bytes.Buffer
 	for key, value := range vars {
 		fmt.Fprintf(&b, "%s=\"%s\"\n", key, value)
 	}
-	return b
+
+	filePath, _ := filepath.Abs(fileName)
+	// potential issue if fail to write to file we just trunicated and lost all vars
+	f, err := os.Create(filePath)
+	if err != nil {
+		log.Fatalf("Failed to create/truncate file: %v", err)
+	}
+	defer f.Close()
+
+	_, err = f.Write(b.Bytes())
+	if err != nil {
+		log.Fatalf("Failed to write to file: %v", err)
+	}
 }

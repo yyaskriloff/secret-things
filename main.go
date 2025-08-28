@@ -1,12 +1,10 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 )
 
 func main() {
@@ -17,7 +15,7 @@ func main() {
 		log.Fatal("no command was not provided")
 	}
 
-	env := flag.String("env", "", "The name of env to assign the vars")
+	env := *flag.String("env", "", "The name of env to assign the vars")
 	shouldDelete := flag.Bool("delete", false, "wether the left over vars should be deleted")
 	flag.Parse()
 
@@ -63,24 +61,24 @@ func main() {
 		varName := os.Args[3]
 		varValue := os.Args[4]
 
-		if env == nil {
+		if env == "" {
 			log.Fatal("you need to set the env flag")
 		}
 
-		err := secrets.Set(*env, varName, varValue)
+		err := secrets.Set(env, varName, varValue)
 
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		state.AddSecret(*env, varName)
+		state.AddSecret(env, varName)
 
 	case "load":
 		if argsLength < 3 {
 			log.Fatal("no file was provided")
 		}
 
-		if env == nil {
+		if env == "" {
 			log.Fatal("you need to set the env flag")
 		}
 
@@ -95,7 +93,7 @@ func main() {
 
 		var keysInStore []string
 
-		secrets.ListKeys(*env, &keysInStore, nil)
+		secrets.ListKeys(env, &keysInStore, nil)
 
 		for _, k := range keysInStore {
 
@@ -103,13 +101,13 @@ func main() {
 
 			if !ok && *shouldDelete {
 				//
-				secrets.Remove(*env, k)
-				state.RemoveSecret(*env, k)
+				secrets.Remove(env, k)
+				state.RemoveSecret(env, k)
 
 			}
 			// if found make sure it's in state
 			if ok {
-				state.AddSecret(*env, k)
+				state.AddSecret(env, k)
 			}
 
 			// removing so we don't recreate
@@ -121,8 +119,8 @@ func main() {
 
 		// creating
 		for k, v := range keyValues {
-			secrets.Set(*env, k, v)
-			state.AddSecret(*env, k)
+			secrets.Set(env, k, v)
+			state.AddSecret(env, k)
 		}
 
 	case "sync":
@@ -134,33 +132,16 @@ func main() {
 
 		keyValues, err := Parse(fileName)
 
-		secrets.GetValues(*env, keyValues, nil)
+		secrets.GetValues(env, keyValues, nil)
 
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		varsForFile := Print(keyValues)
+		WriteEnv(keyValues, fileName)
 
-		filePath, _ := filepath.Abs("./state/app.json")
-		dirPath, _ := filepath.Abs("./state")
-
-		_, err = os.Stat(dirPath)
-		if errors.Is(err, os.ErrNotExist) {
-			os.Mkdir(dirPath, os.ModePerm)
-		} else if err != nil {
-			log.Fatal(err)
-		}
-		// potential issue if fail to write to file we just trunicated and lost all vars
-		f, err := os.Create(filePath)
-		if err != nil {
-			log.Fatalf("Failed to create/truncate file: %v", err)
-		}
-		defer f.Close()
-
-		_, err = f.Write(varsForFile.Bytes())
-		if err != nil {
-			log.Fatalf("Failed to write to file: %v", err)
+		for k := range keyValues {
+			state.AddSecret(env, k)
 		}
 
 	default:
